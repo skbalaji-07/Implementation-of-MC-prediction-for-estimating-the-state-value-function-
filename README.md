@@ -1,191 +1,87 @@
-# Implementation-of-MC-prediction-for-estimating-the-state-value-function-
+<H3 ALIGN=RIGHT> DATE:<H3>
 
-## Date : 
+<H1 ALIGN=CENTER> Experiment-5: Implementation of Kalman filter </H1>
 
-## Aim
+### Name: Balaji SK
+### Register Number: 2305003001
 
-To implement the Monte Carlo (MC) Prediction algorithm for estimating the state-value function of an agent interacting with an environment and to calculate and plot the estimated state-value function.
 
----
+## Aim:
 
-## Objective
+To construct a Python Code to implement the Kalman filter to predict the position and velocity of an object.
 
-- To understand Monte Carlo prediction in Reinforcement Learning.
-- To estimate the value of each state using sampled episodes.
-- To visualize the learned state-value function using a plot.
+## Algorithm:
 
----
+**Step-1:** Define the state transition model F, the observation model H, the process noise covariance Q, the measurement noise covariance R, the initial state estimate x0, and the initial error covariance P0.
 
-## Theory
+**Step-2:**  Create a KalmanFilter object with these parameters.
 
-Monte Carlo Prediction is a model-free reinforcement learning method used to estimate the value function of a policy. It learns directly from complete episodes of interaction with the environment.
+**Step-3:** Simulate the movement of the object for a number of time steps, generating true states and measurements.
 
-The state-value function is defined as:
+**Step-4:** For each measurement, predict the next state using kf.predict().
 
-\[
-V(s) = E[G_t \mid S_t = s]
-\]
+**Step-5:** Update the state estimate based on the measurement using kf.update().
 
-Where:
+**Step-6:** Store the estimated state in a list.
 
-- \(V(s)\) = Value of state \(s\)
-- \(G_t\) = Return obtained from time step \(t\)
+**Step-7:** Plot the true and estimated positions.
 
-Monte Carlo methods calculate the average return obtained after visiting a state multiple times.
+## Program:
 
----
 
-## Algorithm
-
-### Monte Carlo Prediction Algorithm
-
-1. Initialize:
-   - State-value function \(V(s)\)
-   - Returns list for each state
-
-2. Generate an episode using the given policy.
-
-3. For each state appearing in the episode:
-   - Calculate the return \(G\)
-   - Store the return for that state
-   - Update the value function using average return
-
-4. Repeat for many episodes.
-
-5. Plot the estimated state-value function.
-
----
-
-## Program
-
-```
-
-#Implementation of MC prediction for estimating the state-value function and 
-#Calculate and plot the state-value function estimate
+```python
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict
-import gymnasium as gym
-
-# Create Environment
-env = gym.make("FrozenLake-v1", is_slippery=False)
-
-# Parameters
-gamma = 0.9
-episodes = 5000
-
-# State value function
-V = defaultdict(float)
-
-# Returns storage
-returns = defaultdict(list)
-
-# Random policy
-def policy(state):
-    return env.action_space.sample()
-
-# Generate episode
-def generate_episode():
-    episode = []
-
-    state, _ = env.reset()
-    done = False
-
-    while not done:
-        action = policy(state)
-
-        next_state, reward, terminated, truncated, _ = env.step(action)
-        done = terminated or truncated
-
-        episode.append((state, action, reward))
-
-        state = next_state
-
-    return episode
-
-# Monte Carlo Prediction
-for ep in range(episodes):
-
-    episode = generate_episode()
-
-    G = 0
-    visited_states = set()
-
-    # Traverse backward
-    for t in reversed(range(len(episode))):
-
-        state, action, reward = episode[t]
-
-        G = gamma * G + reward
-
-        # First-visit MC
-        if state not in visited_states:
-
-            returns[state].append(G)
-
-            V[state] = np.mean(returns[state])
-
-            visited_states.add(state)
-
-# Print Values
-print("State Value Function:\n")
-
-for s in range(env.observation_space.n):
-    print(f"State {s}: {V[s]:.3f}")
-
-# Convert to 4x4 grid
-value_grid = np.zeros((4,4))
-
-for state in range(16):
-    row = state // 4
-    col = state % 4
-
-    value_grid[row, col] = V[state]
-
-# Plot
-plt.figure(figsize=(6,6))
-
-plt.imshow(value_grid)
-
-for i in range(4):
-    for j in range(4):
-        plt.text(j, i,
-                 round(value_grid[i,j],2),
-                 ha='center',
-                 va='center',
-                 color='white',
-                 fontsize=12)
-
-plt.title("State Value Function Estimate")
-plt.colorbar()
+class KalmanFi1ter:
+    def __init__(self, F, H, Q, R, x0, P0):
+        self.F=F
+        self.H=H
+        self.Q=Q
+        self.R=R
+        self.x=x0
+        self.P=P0
+    def predict (self):
+        self.x=np.dot(self.F,self.x)
+        self.P=np.dot(np.dot(self. F,self. P),self.F.T)+self.Q
+    def update(self,z):
+        y=z-np.dot(self.H,self.x)
+        s=np.dot(np.dot(self.H,self.P),self.H.T)+self.R
+        K=np.dot(np.dot(self.P,self.H.T),np.linalg.inv(s))
+        self.x=self.x+np.dot(K,y)
+        self.P=np.dot(np.eye(self.F.shape[0])-np.dot(K,self.H),self.P)
+dt=0.1
+F=np.array([[1,dt],[0,1]])
+H=np.array([[1,0]])
+Q=np.diag([0.1,0.1])
+R=np.array([[1]])
+x0=np.array([0,0])
+P0=np.diag([1,1])
+kf=KalmanFi1ter(F,H,Q,R,x0,P0)
+truestates=[]
+measurements=[]
+for i in range(100):
+    truestates.append([i*dt,1])
+    measurements.append(i*dt+np.random.normal(scale=1))
+est_states=[]
+for z in measurements:
+    kf.predict()
+    kf.update(np.array([z]))
+    est_states.append(kf.x)
+    
+plt.plot([s[0] for s in est_states],label="BY RICHARDSON")
+plt.plot([s[0] for s in truestates],label="true")
+plt.plot([s[0] for s in est_states],label="Estimate")
+plt.legend()
 plt.show()
-
-
 ```
+___
 
-## Output
+## Output:
 
+<img width="543" height="413" alt="image" src="https://github.com/user-attachments/assets/eb7d065e-04d8-4392-9b74-af6ad88a4773" />
 
-<img width="312" height="366" alt="image" src="https://github.com/user-attachments/assets/941f51b8-ec7d-4e8f-ad27-bd8879687763" />
-
-
-### Output Graph
-
-The following heatmap is generated for the estimated state-value function:
-
-- Darker colors represent lower state values.
-- Terminal states have value 0.
-- States farther from terminal states have larger negative values.
-
-<img width="752" height="836" alt="image" src="https://github.com/user-attachments/assets/16c1829a-e6ed-4668-a6df-0ed015beb183" />
 
 ---
-## Result
 
-Thus, the Monte Carlo Prediction algorithm was successfully implemented for estimating the state-value function of the environment. The value of each state was calculated using sampled episodes, and the estimated state-value function was plotted successfully using a heatmap.
-
-
-
-
-       
-
+## Result:
+Thus, Kalman filter is implemented to predict the next position and   velocity in Python
